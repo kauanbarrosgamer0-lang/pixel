@@ -3,6 +3,7 @@ const SUPA_URL = 'https://zrooqnnfbwyjojwngfoa.supabase.co';
 const SUPA_KEY = 'sb_publishable_iy690zxIXqZ0r81_mjsVJw_k8CBswnN';
 let _accessToken = null;
 let currentUser  = null;
+let afterLoginView = 'home';
 
 async function supaFetch(path, opts={}) {
   const headers = { 'apikey':SUPA_KEY, 'Content-Type':'application/json', ...(opts.headers||{}) };
@@ -14,12 +15,27 @@ async function supaFetch(path, opts={}) {
   return { ok:res.ok, status:res.status, data:json };
 }
 async function authPost(ep, body) { return supaFetch('/auth/v1/'+ep, {method:'POST',body:JSON.stringify(body)}); }
+async function authGet(ep) { return supaFetch('/auth/v1/'+ep); }
 async function dbGet(table, filter) { return supaFetch('/rest/v1/'+table+'?'+new URLSearchParams(filter)+'&limit=1'); }
 async function dbInsert(table, body) { return supaFetch('/rest/v1/'+table, {method:'POST',headers:{'Prefer':'return=minimal'},body:JSON.stringify(body)}); }
 
 function saveSession(d)  { try{localStorage.setItem('lv_session',JSON.stringify(d));}catch(e){} }
 function loadSession()   { try{return JSON.parse(localStorage.getItem('lv_session')||'null');}catch(e){return null;} }
 function clearSession()  { try{localStorage.removeItem('lv_session');}catch(e){} }
+function isSessionExpired(session) {
+  if(!session?.expires_at)return false;
+  return Date.now() >= session.expires_at * 1000;
+}
+function setSession(data) {
+  _accessToken = data.access_token;
+  currentUser = data.user;
+  saveSession({
+    access_token: data.access_token,
+    refresh_token: data.refresh_token,
+    expires_at: data.expires_at,
+    user: data.user
+  });
+}
 
 /* ===== VIEWS ===== */
 function showView(id) {
@@ -30,7 +46,11 @@ function showView(id) {
 function showHome()    { showView('home'); updateNavAuth(); }
 function showAuth(tab='login') { switchTab(tab); showView('auth'); }
 function showCatalog() { showView('catalogo'); updateNavAuth(); renderGrid(); }
-function requireLogin() { if(currentUser) showCatalog(); else showAuth('login'); return false; }
+function requireLogin() {
+  if(currentUser) showCatalog();
+  else { afterLoginView = 'catalogo'; showAuth('login'); }
+  return false;
+}
 
 /* ===== AUTH TABS ===== */
 function switchTab(tab) {
@@ -49,25 +69,27 @@ function showMsg(id,text,type='error') {
 
 /* ===== LOGIN ===== */
 async function doLogin() {
-  const email=document.getElementById('login-email').value.trim();
+  const email=document.getElementById('login-email').value.trim().toLowerCase();
   const pass=document.getElementById('login-password').value;
   if(!email||!pass){showMsg('login-msg','Preencha e-mail e senha.');return;}
   const btn=document.getElementById('btn-login');
   btn.disabled=true;btn.textContent='Entrando...';clearMsgs();
   try {
     const res=await authPost('token?grant_type=password',{email,password:pass});
-    if(!res.ok){showMsg('login-msg',traduzErro(res.data?.error_description||res.data?.msg));btn.disabled=false;btn.textContent='Entrar';return;}
-    _accessToken=res.data.access_token;currentUser=res.data.user;
-    saveSession({access_token:_accessToken,user:currentUser});
-    showHome();updateNavAuth();
+    if(!res.ok){showMsg('login-msg',traduzErro(getAuthError(res.data)));return;}
+    setSession(res.data);
+    document.getElementById('login-password').value='';
+    if(afterLoginView==='catalogo') showCatalog();
+    else showHome();
+    afterLoginView='home';
   } catch(e){showMsg('login-msg','Erro de conexão. Verifique sua internet.');console.error(e);}
-  btn.disabled=false;btn.textContent='Entrar';
+  finally { btn.disabled=false;btn.textContent='Entrar'; }
 }
 
 /* ===== CADASTRO ===== */
 async function doRegister() {
   const name=document.getElementById('reg-name').value.trim();
-  const email=document.getElementById('reg-email').value.trim();
+  const email=document.getElementById('reg-email').value.trim().toLowerCase();
   const pass=document.getElementById('reg-password').value;
   const conf=document.getElementById('reg-confirm').value;
   if(!name||!email||!pass){showMsg('reg-msg','Preencha todos os campos.');return;}
@@ -77,23 +99,30 @@ async function doRegister() {
   btn.disabled=true;btn.textContent='Criando conta...';clearMsgs();
   try {
     const res=await authPost('signup',{email,password:pass,data:{full_name:name}});
-    if(!res.ok){showMsg('reg-msg',traduzErro(res.data?.error_description||res.data?.msg));btn.disabled=false;btn.textContent='Criar conta';return;}
+    if(!res.ok){showMsg('reg-msg',traduzErro(getAuthError(res.data)));return;}
     showMsg('reg-msg','✅ Conta criada! Verifique seu e-mail para confirmar e depois faça login.','success');
   } catch(e){showMsg('reg-msg','Erro de conexão.');console.error(e);}
-  btn.disabled=false;btn.textContent='Criar conta';
+  finally { btn.disabled=false;btn.textContent='Criar conta'; }
 }
 
 async function doGoogle() { showMsg('login-msg','Login com Google não disponível no momento.','info'); }
 
-function logout() { _accessToken=null;currentUser=null;clearSession();updateNavAuth();showHome(); }
+function logout() { _accessToken=null;currentUser=null;afterLoginView='home';clearSession();updateNavAuth();showHome(); }
+
+function getAuthError(data) {
+  if(!data)return '';
+  return data.error_description||data.message||data.msg||data.error||String(data);
+}
 
 function traduzErro(msg) {
   if(!msg)return'Erro desconhecido.';
   if(msg.includes('Invalid login')||msg.includes('invalid_grant')||msg.includes('Invalid email or password'))return'E-mail ou senha incorretos.';
   if(msg.includes('Email not confirmed'))return'Confirme seu e-mail antes de entrar.';
   if(msg.includes('already registered')||msg.includes('already been registered'))return'Este e-mail já está cadastrado.';
+  if(msg.includes('User already registered'))return'Este e-mail já está cadastrado.';
   if(msg.includes('Password')||msg.includes('password'))return'Senha fraca. Use pelo menos 6 caracteres.';
   if(msg.includes('rate limit'))return'Muitas tentativas. Aguarde alguns minutos.';
+  if(msg.includes('JWT')||msg.includes('expired'))return'Sua sessão expirou. Faça login novamente.';
   return msg;
 }
 
@@ -101,12 +130,29 @@ function traduzErro(msg) {
 function updateNavAuth() {
   const area=document.getElementById('nav-auth-area');
   const mobBtn=document.getElementById('mob-auth-btn');
+  area.textContent='';
   if(currentUser){
     const name=currentUser.user_metadata?.full_name||currentUser.email;
-    area.innerHTML=`<div class="nav-user"><span class="nav-user-name">${name}</span><button class="nav-logout" onclick="logout()">Sair</button></div>`;
+    const wrap=document.createElement('div');
+    const userName=document.createElement('span');
+    const logoutBtn=document.createElement('button');
+    wrap.className='nav-user';
+    userName.className='nav-user-name';
+    userName.textContent=name;
+    logoutBtn.className='nav-logout';
+    logoutBtn.type='button';
+    logoutBtn.textContent='Sair';
+    logoutBtn.addEventListener('click',logout);
+    wrap.append(userName,logoutBtn);
+    area.appendChild(wrap);
     mobBtn.textContent='Sair';mobBtn.onclick=()=>{logout();closeMobile();};
   } else {
-    area.innerHTML=`<span class="nav-cta" onclick="showAuth('login')">Entrar</span>`;
+    const loginBtn=document.createElement('button');
+    loginBtn.className='nav-cta';
+    loginBtn.type='button';
+    loginBtn.textContent='Entrar';
+    loginBtn.addEventListener('click',()=>showAuth('login'));
+    area.appendChild(loginBtn);
     mobBtn.textContent='Entrar';mobBtn.onclick=()=>{showAuth('login');closeMobile();};
   }
 }
@@ -116,6 +162,17 @@ function updateNavAuth() {
   const saved=loadSession();
   if(saved?.access_token&&saved?.user){
     _accessToken=saved.access_token;currentUser=saved.user;
+    if(isSessionExpired(saved)&&saved.refresh_token){
+      _accessToken=null;
+      const refreshRes=await authPost('token?grant_type=refresh_token',{refresh_token:saved.refresh_token});
+      if(refreshRes.ok) setSession(refreshRes.data);
+      else { _accessToken=null;currentUser=null;clearSession(); }
+    }
+    if(_accessToken){
+      const userRes=await authGet('user');
+      if(userRes.ok&&userRes.data?.id) currentUser=userRes.data;
+      else { _accessToken=null;currentUser=null;clearSession(); }
+    }
   }
   showHome();updateNavAuth();
 })();
