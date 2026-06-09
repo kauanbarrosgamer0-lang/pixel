@@ -6,8 +6,12 @@ let currentUser  = null;
 let afterLoginView = 'home';
 
 async function supaFetch(path, opts={}) {
-  const headers = { 'apikey':SUPA_KEY, 'Content-Type':'application/json', ...(opts.headers||{}) };
-  if (_accessToken) headers['Authorization'] = 'Bearer ' + _accessToken;
+  const headers = {
+    'apikey': SUPA_KEY,
+    'Authorization': 'Bearer ' + (_accessToken || SUPA_KEY),
+    'Content-Type': 'application/json',
+    ...(opts.headers||{})
+  };
   const res = await fetch(SUPA_URL + path, {...opts, headers});
   const text = await res.text();
   let json = null;
@@ -18,6 +22,13 @@ async function authPost(ep, body) { return supaFetch('/auth/v1/'+ep, {method:'PO
 async function authGet(ep) { return supaFetch('/auth/v1/'+ep); }
 async function dbGet(table, filter) { return supaFetch('/rest/v1/'+table+'?'+new URLSearchParams(filter)+'&limit=1'); }
 async function dbInsert(table, body) { return supaFetch('/rest/v1/'+table, {method:'POST',headers:{'Prefer':'return=minimal'},body:JSON.stringify(body)}); }
+async function dbRpc(fn, body) { return supaFetch('/rest/v1/rpc/'+fn, {method:'POST',body:JSON.stringify(body)}); }
+function logAuthError(action, res) {
+  console.warn('[auth]', action, {
+    status: res.status,
+    message: getAuthError(res.data)
+  });
+}
 
 function saveSession(d)  { try{localStorage.setItem('lv_session',JSON.stringify(d));}catch(e){} }
 function loadSession()   { try{return JSON.parse(localStorage.getItem('lv_session')||'null');}catch(e){return null;} }
@@ -35,6 +46,18 @@ function setSession(data) {
     expires_at: data.expires_at,
     user: data.user
   });
+}
+async function emailJaCadastrado(email) {
+  const res = await dbRpc('email_exists', {check_email:email});
+
+  if(res.ok)return res.data===true;
+
+  console.warn('[auth] checagem de email falhou', {
+    status: res.status,
+    message: getAuthError(res.data)
+  });
+
+  return false;
 }
 
 /* ===== VIEWS ===== */
@@ -76,7 +99,7 @@ async function doLogin() {
   btn.disabled=true;btn.textContent='Entrando...';clearMsgs();
   try {
     const res=await authPost('token?grant_type=password',{email,password:pass});
-    if(!res.ok){showMsg('login-msg',traduzErro(getAuthError(res.data)));return;}
+    if(!res.ok){logAuthError('login',res);showMsg('login-msg',traduzErro(getAuthError(res.data)));return;}
     setSession(res.data);
     document.getElementById('login-password').value='';
     if(afterLoginView==='catalogo') showCatalog();
@@ -96,10 +119,20 @@ async function doRegister() {
   if(pass.length<6){showMsg('reg-msg','Senha deve ter pelo menos 6 caracteres.');return;}
   if(pass!==conf){showMsg('reg-msg','As senhas não coincidem.');return;}
   const btn=document.getElementById('btn-register');
-  btn.disabled=true;btn.textContent='Criando conta...';clearMsgs();
+  btn.disabled=true;btn.textContent='Verificando...';clearMsgs();
   try {
+    const exists=await emailJaCadastrado(email);
+    if(exists){showMsg('reg-msg','Já existe uma conta cadastrada com este e-mail. Faça login.');return;}
+
+    btn.textContent='Criando conta...';
     const res=await authPost('signup',{email,password:pass,data:{full_name:name}});
-    if(!res.ok){showMsg('reg-msg',traduzErro(getAuthError(res.data)));return;}
+    if(!res.ok){logAuthError('signup',res);showMsg('reg-msg',traduzErro(getAuthError(res.data)));return;}
+
+    if(res.data?.user?.identities&&res.data.user.identities.length===0){
+      showMsg('reg-msg','Já existe uma conta cadastrada com este e-mail. Faça login.');
+      return;
+    }
+
     showMsg('reg-msg','✅ Conta criada! Verifique seu e-mail para confirmar e depois faça login.','success');
   } catch(e){showMsg('reg-msg','Erro de conexão.');console.error(e);}
   finally { btn.disabled=false;btn.textContent='Criar conta'; }
@@ -116,8 +149,12 @@ function getAuthError(data) {
 
 function traduzErro(msg) {
   if(!msg)return'Erro desconhecido.';
+  if(msg.includes('No API key')||msg.includes('API key'))return'Erro na chave publica do Supabase. Verifique SUPA_KEY.';
+  if(msg.includes('Invalid API key'))return'Chave publica do Supabase invalida ou revogada.';
   if(msg.includes('Invalid login')||msg.includes('invalid_grant')||msg.includes('Invalid email or password'))return'E-mail ou senha incorretos.';
+  if(msg.includes('Email logins are disabled'))return'Login por e-mail e senha esta desativado no Supabase.';
   if(msg.includes('Email not confirmed'))return'Confirme seu e-mail antes de entrar.';
+  if(msg.includes('email_already_registered'))return'Já existe uma conta cadastrada com este e-mail. Faça login.';
   if(msg.includes('already registered')||msg.includes('already been registered'))return'Este e-mail já está cadastrado.';
   if(msg.includes('User already registered'))return'Este e-mail já está cadastrado.';
   if(msg.includes('Password')||msg.includes('password'))return'Senha fraca. Use pelo menos 6 caracteres.';
