@@ -62,12 +62,17 @@ returns boolean
 language sql
 stable
 security definer
-set search_path = public
+set search_path = public, auth
 as $$
   select exists (
     select 1
+    from auth.users
+    where lower(email) = lower(check_email)
+  )
+  or exists (
+    select 1
     from public.profiles
-    where email = lower(check_email)
+    where lower(email) = lower(check_email)
   );
 $$;
 
