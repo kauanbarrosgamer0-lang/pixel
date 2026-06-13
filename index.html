@@ -45,8 +45,10 @@
 <!-- LOADER -->
 <!-- ============================================================ -->
 <div id="loader" role="status" aria-label="Carregando">
+  <div class="loader-brand">Pixel<span>.</span></div>
   <div class="pixel-grid" id="pixelGrid"></div>
-  <div class="loader-label">Booting LED Matrix...</div>
+  <div class="loader-label">Inicializando painel LED</div>
+  <div class="loader-bar"><div class="loader-bar-fill"></div></div>
 </div>
 
 <!-- 3D BACKGROUND -->
@@ -146,23 +148,25 @@
   <!-- HERO -->
   <section class="hero" id="hero">
     <div class="hero-grid"></div>
-    <div class="hero-glow"></div>
+    <div class="hero-glow-top"></div>
     <div class="hero-content">
       <span class="hero-eyebrow">Aluguel de Painéis de LED • Tangará da Serra - MT</span>
       <h1 class="hero-h1">
-        Iluminação que<br>
-        <span class="hl">transforma</span> seus<br>
-        <span class="hl2">espaços</span>
+        Seu evento merece<br>
+        uma tela que <span class="hl">impressiona</span>
       </h1>
       <p class="hero-desc">
-        Alugamos painéis de LED para festas, eventos e shows. Nossa equipe monta e desmonta tudo pra você. Atendemos Tangará da Serra e região.
+        Alugamos painéis de LED de alta qualidade para festas, casamentos e shows. Nossa equipe cuida de tudo — montagem, operação e desmontagem.
       </p>
       <div class="hero-actions">
-        <button class="btn btn-primary" onclick="requireLogin()">Ver Painéis</button>
-        <a href="#contato" class="btn btn-outline" onclick="navScrollTo('contato')">Solicitar Orçamento</a>
+        <button class="btn btn-primary" onclick="requireLogin()">Ver Painéis Disponíveis</button>
+        <a class="btn btn-outline" onclick="navScrollTo('contato')">Solicitar Orçamento</a>
       </div>
     </div>
-    <button class="hero-scroll" onclick="navScrollTo('metrics')"><span>↓</span>scroll</button>
+    <button class="hero-scroll" onclick="navScrollTo('metrics')">
+      <div class="hero-scroll-arrow"></div>
+      scroll
+    </button>
   </section>
 
   <!-- METRICS -->
@@ -198,49 +202,49 @@
   </section>
 
   <!-- FEATURES -->
-  <section class="features-section section-band" id="features">
-    <div class="section-container">
-      <div class="section-heading section-heading-center">
+  <section class="features-section about-section" id="features" style="background:var(--bg2);border-top:1px solid var(--border)">
+    <div style="max-width:1280px;margin:0 auto">
+      <div style="text-align:center;margin-bottom:52px">
         <div class="section-label reveal">Tecnologia</div>
         <h2 class="section-title reveal reveal-d1">O melhor para o seu evento</h2>
-        <div class="section-rule"></div>
+        <div style="height:2px;width:60px;background:var(--cyan);margin:16px auto 0;box-shadow:0 0 8px var(--cyan)"></div>
       </div>
       <div class="grid-3">
         <article class="feature-card reveal">
-          <div class="feature-icon feature-icon-cyan">⚡</div>
-          <h3 class="feature-title">Qualidade de Imagem</h3>
-          <p class="feature-text">Imagem vibrante e nítida em qualquer ambiente, interno ou externo, dia ou noite.</p>
+          <div class="feature-icon" style="background:rgba(0,242,255,.12)">⚡</div>
+          <h3 style="font-family:var(--font-head);font-size:20px;font-weight:700;margin-bottom:12px">Qualidade de Imagem</h3>
+          <p style="font-size:14px;color:var(--muted);line-height:1.7">Imagem vibrante e nítida em qualquer ambiente, interno ou externo, dia ou noite.</p>
         </article>
         <article class="feature-card reveal reveal-d1">
-          <div class="feature-icon feature-icon-purple">🖥️</div>
-          <h3 class="feature-title">Alta Resolução</h3>
-          <p class="feature-text">Painéis de alta resolução que garantem qualidade de imagem impressionante no seu evento.</p>
+          <div class="feature-icon" style="background:rgba(112,0,255,.12)">🖥️</div>
+          <h3 style="font-family:var(--font-head);font-size:20px;font-weight:700;margin-bottom:12px">Alta Resolução</h3>
+          <p style="font-size:14px;color:var(--muted);line-height:1.7">Painéis de alta resolução que garantem qualidade de imagem impressionante no seu evento.</p>
         </article>
         <article class="feature-card reveal reveal-d2">
-          <div class="feature-icon feature-icon-rose">🛡️</div>
-          <h3 class="feature-title">Montagem Profissional</h3>
-          <p class="feature-text">Equipamentos robustos e seguros. Nossa equipe cuida de toda a montagem e desmontagem.</p>
+          <div class="feature-icon" style="background:rgba(255,60,110,.12)">🛡️</div>
+          <h3 style="font-family:var(--font-head);font-size:20px;font-weight:700;margin-bottom:12px">Montagem Profissional</h3>
+          <p style="font-size:14px;color:var(--muted);line-height:1.7">Equipamentos robustos e seguros. Nossa equipe cuida de toda a montagem e desmontagem.</p>
         </article>
       </div>
     </div>
   </section>
 
   <!-- ABOUT -->
-  <section class="about-section about-section-home" id="about">
-    <div class="section-container about-grid">
+  <section class="about-section" id="about" style="background:var(--bg)">
+    <div style="max-width:1280px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center">
       <div class="about-img-wrap reveal">
         <div class="about-img-glow"></div>
-        <div class="about-img-frame about-media">
+        <div class="about-img-frame" style="aspect-ratio:16/9">
           <img src="https://images.unsplash.com/photo-1542744095-2df036600504?auto=format&fit=crop&w=800&q=80"
                alt="Painel de LED em ambiente corporativo" width="800" height="450" loading="lazy" />
         </div>
       </div>
       <div class="reveal reveal-d1">
         <div class="section-label">Quem somos</div>
-        <h2 class="section-title section-title-lg">
-          Iluminando seus <span class="text-accent">eventos</span> com estilo
+        <h2 class="section-title" style="font-size:clamp(28px,3.5vw,46px)">
+          Iluminando seus <span style="color:var(--cyan)">eventos</span> com estilo
         </h2>
-        <p class="about-copy">
+        <p style="font-size:15px;color:var(--muted);line-height:1.8;margin-bottom:8px">
           Alugamos painéis de LED para todo tipo de evento — festas de aniversário, casamentos, shows, formaturas e eventos corporativos. Nossa equipe cuida de tudo, da montagem à desmontagem.
         </p>
         <ul class="check-list">
@@ -254,8 +258,8 @@
   </section>
 
   <!-- PORTFOLIO -->
-  <section class="portfolio-section portfolio-section-home" id="portfolio">
-    <div class="section-container">
+  <section class="portfolio-section" id="portfolio" style="padding-top:88px">
+    <div style="max-width:1280px;margin:0 auto">
       <div class="section-header">
         <div>
           <div class="section-label reveal">Cases</div>
@@ -268,11 +272,11 @@
 
   <!-- WHY -->
   <section class="why-section">
-    <div class="section-container">
-      <div class="section-heading section-heading-narrow">
+    <div style="max-width:1280px;margin:0 auto">
+      <div style="text-align:center;max-width:600px;margin:0 auto 0">
         <div class="section-label reveal">Diferenciais</div>
         <h2 class="section-title reveal reveal-d1">Por que contratar a Pixel?</h2>
-        <p class="section-sub reveal reveal-d2">Oferecemos muito mais do que equipamento — entregamos uma solução completa para o seu evento.</p>
+        <p class="section-sub reveal reveal-d2" style="margin:0 auto">Oferecemos muito mais do que equipamento — entregamos uma solução completa para o seu evento.</p>
       </div>
       <div class="why-grid">
         <div class="why-card reveal">
@@ -314,7 +318,7 @@
   <footer>
     <div class="footer-grid">
       <div class="footer-brand">
-        <span class="nav-logo footer-logo">Pixel</span>
+        <span class="nav-logo" style="font-size:20px">Pixel</span>
         <p>Aluguel de painéis de LED para festas e eventos em Tangará da Serra - MT. Nossa equipe monta tudo.</p>
       </div>
       <div class="footer-col">
@@ -354,8 +358,8 @@
 <div class="view" id="view-catalogo">
   <div class="catalog-hero">
     <div class="section-label">Produtos</div>
-    <h2 class="section-title catalog-title">Painéis disponíveis para aluguel</h2>
-    <p class="section-sub catalog-subtitle">Painéis disponíveis para aluguel. Nossa equipe monta e desmonta no seu evento.</p>
+    <h2 class="section-title" style="font-size:clamp(28px,5vw,52px)">Painéis disponíveis para aluguel</h2>
+    <p class="section-sub" style="margin:12px auto 0">Painéis disponíveis para aluguel. Nossa equipe monta e desmonta no seu evento.</p>
   </div>
   <div class="catalog-wrapper">
     <aside class="sidebar">
@@ -372,7 +376,7 @@
         <div class="range-group">
           <label><span>Mín: P<span id="pitch-min-lbl">1</span></span><span>Máx: P<span id="pitch-max-lbl">10</span></span></label>
           <input type="range" id="pitch-min" min="1" max="10" value="1" step="0.5">
-          <input class="range-spaced" type="range" id="pitch-max" min="1" max="10" value="10" step="0.5">
+          <input type="range" id="pitch-max" min="1" max="10" value="10" step="0.5" style="margin-top:8px">
           <div class="range-warning" id="pitch-warning">⚠ Mínimo maior que máximo</div>
         </div>
       </div>

@@ -57,7 +57,7 @@ async function emailJaCadastrado(email) {
     message: getAuthError(res.data)
   });
 
-  return null;
+  return false;
 }
 
 /* ===== VIEWS ===== */
@@ -99,7 +99,7 @@ async function doLogin() {
   btn.disabled=true;btn.textContent='Entrando...';clearMsgs();
   try {
     const res=await authPost('token?grant_type=password',{email,password:pass});
-    if(!res.ok){logAuthError('login',res);showMsg('login-msg',await traduzErroLogin(getAuthError(res.data),email));return;}
+    if(!res.ok){logAuthError('login',res);showMsg('login-msg',traduzErro(getAuthError(res.data)));return;}
     setSession(res.data);
     document.getElementById('login-password').value='';
     if(afterLoginView==='catalogo') showCatalog();
@@ -161,21 +161,6 @@ function traduzErro(msg) {
   if(msg.includes('rate limit'))return'Muitas tentativas. Aguarde alguns minutos.';
   if(msg.includes('JWT')||msg.includes('expired'))return'Sua sessão expirou. Faça login novamente.';
   return msg;
-}
-
-async function traduzErroLogin(msg,email) {
-  if(!msg)return'Erro desconhecido.';
-
-  if(msg.includes('Invalid login')||msg.includes('invalid_grant')||msg.includes('Invalid email or password')){
-    const exists=await emailJaCadastrado(email);
-
-    if(exists===true)return'Conta encontrada, mas a senha não confere. Verifique a senha ou redefina o acesso.';
-    if(exists===false)return'Não existe conta cadastrada com este e-mail. Crie uma conta primeiro.';
-
-    return'Não foi possível confirmar se o e-mail existe. Verifique e-mail e senha.';
-  }
-
-  return traduzErro(msg);
 }
 
 /* ===== NAV AUTH ===== */
